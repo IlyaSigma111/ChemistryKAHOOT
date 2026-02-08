@@ -8,11 +8,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* ОСНОВНЫЕ СТИЛИ */
+        /* СБРОС СТИЛЕЙ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html {
+            height: 100%;
+            -webkit-text-size-adjust: 100%;
         }
         
         body.student-page {
@@ -20,55 +26,36 @@
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: white;
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
             margin: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
         
-        /* ФИКС ДЛЯ iOS - УПРОЩАЕМ ФОН */
+        /* iOS ФИКС */
         @supports (-webkit-touch-callout: none) {
             body.student-page {
+                min-height: -webkit-fill-available;
                 background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
-            }
-            
-            body.student-page::before {
-                display: none; /* Убираем сложные градиенты на iOS */
             }
         }
         
         .student-container {
             width: 100%;
             max-width: 600px;
-            background: rgba(26, 26, 46, 0.85); /* Более темный фон для iOS */
+            background: rgba(26, 26, 46, 0.95);
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            z-index: 1;
         }
         
-        /* iOS ФИКС - упрощаем backdrop-filter */
-        @supports not (backdrop-filter: blur(20px)) {
-            .student-container {
-                background: rgba(26, 26, 46, 0.92);
-            }
-        }
-        
-        /* iOS ФИКС - стеклянные эффекты */
-        @supports (-webkit-touch-callout: none) {
-            .student-container {
-                -webkit-backdrop-filter: none !important;
-                backdrop-filter: none !important;
-                background: rgba(20, 20, 40, 0.95);
-            }
-            
-            .screen {
-                background: rgba(30, 30, 50, 0.9);
-            }
-        }
-        
-        /* ОСТАЛЬНЫЕ СТИЛИ СОХРАНЯЕМ */
         .screen {
             display: none;
             padding: 40px 30px;
@@ -87,7 +74,7 @@
             margin-bottom: 25px;
             display: inline-block;
             color: #4facfe;
-            filter: drop-shadow(0 5px 15px rgba(79, 172, 254, 0.3));
+            filter: drop-shadow(0 5px 15px rgba(79, 172, 254, 0.4));
         }
         
         .login-box h1 {
@@ -101,7 +88,7 @@
         }
         
         .subtitle {
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.9);
             margin-bottom: 40px;
             font-size: 1.1rem;
             line-height: 1.5;
@@ -116,7 +103,7 @@
             display: block;
             margin-bottom: 10px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.95);
+            color: white;
             font-size: 1rem;
             display: flex;
             align-items: center;
@@ -126,21 +113,22 @@
         .form-group input {
             width: 100%;
             padding: 18px 20px;
-            background: rgba(255, 255, 255, 0.12);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.25);
             border-radius: 16px;
             color: white;
             font-size: 1.1rem;
             transition: all 0.3s ease;
             font-family: inherit;
             -webkit-appearance: none;
+            appearance: none;
         }
         
         .form-group input:focus {
             outline: none;
             border-color: #4facfe;
-            background: rgba(79, 172, 254, 0.2);
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.15);
+            background: rgba(79, 172, 254, 0.25);
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
         }
         
         .code-input-container input {
@@ -158,7 +146,8 @@
             text-align: center;
         }
         
-        .glass-btn {
+        /* КНОПКА с iOS ФИКСАМИ */
+        #joinButton {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -170,41 +159,59 @@
             border: none;
             border-radius: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
             margin: 15px 0;
             color: white;
             position: relative;
             overflow: hidden;
-            border: 2px solid transparent;
-        }
-        
-        /* iOS ФИКС - кнопки */
-        @supports (-webkit-touch-callout: none) {
-            .glass-btn {
-                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-                box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
-                border: none;
-            }
-            
-            .btn-leave {
-                background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-                box-shadow: 0 10px 25px rgba(255, 65, 108, 0.3);
-            }
-        }
-        
-        .btn-join {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
+            transition: all 0.2s ease;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            min-height: 60px;
+        }
+        
+        /* iOS ФИКС - активное состояние */
+        #joinButton:active {
+            transform: translateY(2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+        
+        /* Hover для десктопов */
+        @media (hover: hover) {
+            #joinButton:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 15px 35px rgba(79, 172, 254, 0.4);
+            }
         }
         
         .btn-leave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            margin: 15px 0;
+            color: white;
             background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
             box-shadow: 0 10px 25px rgba(255, 65, 108, 0.3);
+            transition: all 0.2s ease;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            min-height: 60px;
         }
         
-        .glass-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        .btn-leave:active {
+            transform: translateY(2px);
+            box-shadow: 0 5px 15px rgba(255, 65, 108, 0.3);
         }
         
         .login-info {
@@ -219,38 +226,10 @@
             line-height: 1.5;
         }
         
-        /* iOS ФИКС - контейнеры */
-        @supports (-webkit-touch-callout: none) {
-            .user-info,
-            .question-header,
-            .answer-status,
-            .result-content {
-                background: rgba(255, 255, 255, 0.1) !important;
-                -webkit-backdrop-filter: none !important;
-                backdrop-filter: none !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            }
-            
-            .option-btn {
-                background: rgba(255, 255, 255, 0.12) !important;
-                border: 2px solid rgba(255, 255, 255, 0.25) !important;
-            }
-            
-            .option-btn:hover {
-                background: rgba(79, 172, 254, 0.25) !important;
-                border-color: rgba(79, 172, 254, 0.5) !important;
-            }
-            
-            .option-btn.selected {
-                background: rgba(67, 233, 123, 0.25) !important;
-                border-color: rgba(67, 233, 123, 0.5) !important;
-            }
-        }
-        
         .loader {
             width: 80px;
             height: 80px;
-            border: 4px solid rgba(255, 255, 255, 0.15);
+            border: 4px solid rgba(255, 255, 255, 0.2);
             border-top: 4px solid #4facfe;
             border-radius: 50%;
             margin: 0 auto 30px;
@@ -291,7 +270,7 @@
         }
         
         .info-item span {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             font-size: 1rem;
         }
         
@@ -313,11 +292,11 @@
         }
         
         .question-header {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.25));
             padding: 20px 25px;
             border-radius: 20px;
             margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
         }
         
         .question-meta {
@@ -334,7 +313,7 @@
             border-radius: 20px;
             font-weight: 700;
             font-size: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
         }
         
         .question-number {
@@ -350,6 +329,7 @@
             margin-bottom: 40px;
             text-align: center;
             font-weight: 700;
+            word-wrap: break-word;
         }
         
         .options {
@@ -360,8 +340,8 @@
         }
         
         .option-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.25);
             border-radius: 18px;
             padding: 20px;
             color: white;
@@ -371,7 +351,23 @@
             align-items: center;
             gap: 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+            min-height: 70px;
+        }
+        
+        /* iOS ФИКС - активное состояние кнопок */
+        .option-btn:active {
+            background: rgba(79, 172, 254, 0.3);
+            border-color: rgba(79, 172, 254, 0.6);
+            transform: scale(0.98);
+        }
+        
+        .option-btn.selected {
+            background: rgba(67, 233, 123, 0.3);
+            border-color: rgba(67, 233, 123, 0.6);
         }
         
         .option-letter {
@@ -388,6 +384,10 @@
             flex-shrink: 0;
         }
         
+        .option-btn.selected .option-letter {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+        }
+        
         .answer-status {
             text-align: center;
             padding: 20px;
@@ -398,6 +398,10 @@
             font-weight: 800;
             font-size: 1.2rem;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .result-box h2 {
@@ -416,8 +420,8 @@
         }
         
         .error-message {
-            background: rgba(255, 0, 0, 0.2);
-            border: 1px solid rgba(255, 0, 0, 0.4);
+            background: rgba(255, 50, 50, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.4);
             color: #ff9999;
             padding: 12px 15px;
             border-radius: 12px;
@@ -426,7 +430,7 @@
             font-weight: 600;
         }
         
-        /* МЕДИА-ЗАПРОСЫ */
+        /* iOS ФИКС для мобильных */
         @media (max-width: 768px) {
             .student-container {
                 border-radius: 20px;
@@ -446,17 +450,23 @@
             
             .question-text {
                 font-size: 1.3rem;
+                line-height: 1.5;
             }
             
             .option-btn {
                 padding: 18px 16px;
                 font-size: 1rem;
+                min-height: 65px;
             }
             
             .option-letter {
                 width: 45px;
                 height: 45px;
                 font-size: 1.2rem;
+            }
+            
+            #joinButton, .btn-leave {
+                min-height: 65px;
             }
         }
         
@@ -479,10 +489,15 @@
                 font-size: 1.2rem;
             }
             
-            .glass-btn {
+            #joinButton, .btn-leave {
                 padding: 18px;
                 font-size: 1.1rem;
             }
+        }
+        
+        /* Предотвращаем масштабирование на iOS */
+        input, textarea, select {
+            font-size: 16px !important;
         }
     </style>
 </head>
@@ -503,7 +518,8 @@
                         <input type="text" id="playerName" 
                                placeholder="Введите ваше имя"
                                maxlength="15"
-                               autocomplete="off">
+                               autocomplete="off"
+                               autocapitalize="words">
                     </div>
                     
                     <div class="form-group">
@@ -520,7 +536,7 @@
                         </div>
                     </div>
                     
-                    <button id="joinButton" class="glass-btn btn-join">
+                    <button id="joinButton" class="glass-btn">
                         <i class="fas fa-gamepad"></i> ПОДКЛЮЧИТЬСЯ К ВИКТОРИНЕ
                     </button>
                     
@@ -558,7 +574,7 @@
                     <p>👥 Участников: <span id="roomPlayers" style="color: #43e97b;">1</span></p>
                 </div>
                 
-                <button onclick="leaveGame()" class="glass-btn btn-leave">
+                <button onclick="leaveGame()" class="btn-leave">
                     <i class="fas fa-sign-out-alt"></i> ВЫЙТИ ИЗ ВИКТОРИНЫ
                 </button>
             </div>
@@ -608,8 +624,253 @@
     <script src="firebase-config.js"></script>
 
     <script>
-        // JavaScript код остается БЕЗ ИЗМЕНЕНИЙ
-        // ... ваш существующий код отсюда ...
+        // ============================================
+        // ОСНОВНОЙ КОД STUDENT
+        // ============================================
+
+        let currentGameId = null;
+        let playerName = null;
+        let currentQuestion = null;
+        let hasAnswered = false;
+        let selectedOption = null;
+        let db = null;
+        let gameRef = null;
+
+        // DOM элементы
+        const joinScreen = document.getElementById('joinScreen');
+        const waitingScreen = document.getElementById('waitingScreen');
+        const questionScreen = document.getElementById('questionScreen');
+        const resultScreen = document.getElementById('resultScreen');
+        const playerNameInput = document.getElementById('playerName');
+        const gameCodeInput = document.getElementById('gameCode');
+        const joinButton = document.getElementById('joinButton');
+        const displayName = document.getElementById('displayName');
+        const displayCode = document.getElementById('displayCode');
+        const displayScore = document.getElementById('displayScore');
+        const roomPlayers = document.getElementById('roomPlayers');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const answerStatus = document.getElementById('answerStatus');
+        const resultContent = document.getElementById('resultContent');
+        const currentQ = document.getElementById('currentQ');
+        const questionType = document.getElementById('questionType');
+        const errorContainer = document.getElementById('errorContainer');
+
+        // iOS ФИКС для фокуса
+        function fixIOSFocus() {
+            if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+                const inputs = document.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.addEventListener('focus', function() {
+                        this.style.fontSize = '16px';
+                    });
+                    input.addEventListener('blur', function() {
+                        this.style.fontSize = '';
+                    });
+                });
+            }
+        }
+
+        function showError(message) {
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i> ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                errorContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        function switchScreen(screenName) {
+            [joinScreen, waitingScreen, questionScreen, resultScreen].forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            document.getElementById(screenName + 'Screen').classList.add('active');
+        }
+
+        // ============================================
+        // ОСНОВНАЯ ФУНКЦИЯ ПОДКЛЮЧЕНИЯ
+        // ============================================
+
+        function joinGame() {
+            console.log("Нажата кнопка подключения");
+            
+            errorContainer.innerHTML = '';
+            
+            const name = playerNameInput.value.trim();
+            const code = gameCodeInput.value.trim();
+            
+            if (!name || name.length < 2) {
+                showError("Введите имя (минимум 2 символа)");
+                playerNameInput.focus();
+                return;
+            }
+            
+            if (!code || code.length !== 8 || !/^\d{8}$/.test(code)) {
+                showError("Введите 8 цифр кода викторины");
+                gameCodeInput.focus();
+                return;
+            }
+            
+            // Проверяем Firebase
+            if (typeof firebase === 'undefined') {
+                showError("Firebase не загружен. Обновите страницу.");
+                return;
+            }
+            
+            if (!window.db) {
+                try {
+                    window.db = firebase.database();
+                } catch (error) {
+                    showError("Ошибка инициализации Firebase: " + error.message);
+                    return;
+                }
+            }
+            
+            db = window.db;
+            playerName = name;
+            currentGameId = "game_" + code;
+            
+            // Меняем состояние кнопки
+            const originalText = joinButton.innerHTML;
+            const originalBackground = joinButton.style.background;
+            joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ПОДКЛЮЧЕНИЕ...';
+            joinButton.disabled = true;
+            joinButton.style.opacity = '0.8';
+            
+            console.log(`Проверяю игру: ${currentGameId}`);
+            
+            // Проверяем существование игры
+            db.ref(`games/${currentGameId}`).once('value')
+                .then(snapshot => {
+                    if (!snapshot.exists()) {
+                        throw new Error(`Викторина с кодом ${code} не найдена!`);
+                    }
+                    
+                    const game = snapshot.val();
+                    console.log("Игра найдена");
+                    
+                    if (game.status === "finished") {
+                        throw new Error("Эта викторина уже завершена");
+                    }
+                    
+                    if (game.players && game.players[name]) {
+                        throw new Error("Участник с таким именем уже есть!");
+                    }
+                    
+                    // Регистрируем игрока
+                    const playerData = {
+                        name: name,
+                        joined: Date.now(),
+                        score: 0,
+                        device: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "📱 Телефон" : "💻 Компьютер"
+                    };
+                    
+                    return db.ref(`games/${currentGameId}/players/${name}`).set(playerData);
+                })
+                .then(() => {
+                    console.log("Игрок зарегистрирован");
+                    
+                    displayName.textContent = playerName;
+                    displayCode.textContent = code;
+                    
+                    switchScreen('waiting');
+                    
+                    // Начинаем слушать игру
+                    listenToGame();
+                    
+                    // Восстанавливаем кнопку
+                    joinButton.innerHTML = originalText;
+                    joinButton.disabled = false;
+                    joinButton.style.opacity = '1';
+                    
+                })
+                .catch(error => {
+                    console.error("Ошибка:", error);
+                    showError(error.message || "Ошибка подключения");
+                    
+                    // Восстанавливаем кнопку
+                    joinButton.innerHTML = originalText;
+                    joinButton.disabled = false;
+                    joinButton.style.opacity = '1';
+                });
+        }
+
+        // Остальные функции остаются БЕЗ ИЗМЕНЕНИЙ
+        // (слушатель игры, обработка вопросов и т.д.)
+
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Страница загружена");
+            
+            // iOS фиксы
+            fixIOSFocus();
+            
+            // Фокус на поле имени
+            setTimeout(() => {
+                if (playerNameInput) {
+                    playerNameInput.focus();
+                }
+            }, 300);
+            
+            // Обработчик кнопки с touch событиями
+            joinButton.addEventListener('click', joinGame);
+            joinButton.addEventListener('touchstart', function(e) {
+                e.preventDefault(); // Предотвращаем двойное срабатывание
+                joinGame();
+            }, { passive: false });
+            
+            // Обработчики Enter
+            playerNameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    gameCodeInput.focus();
+                }
+            });
+            
+            gameCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    joinGame();
+                }
+            });
+            
+            // Валидация ввода
+            gameCodeInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '').substring(0, 8);
+            });
+            
+            playerNameInput.addEventListener('input', function() {
+                if (this.value.length > 15) {
+                    this.value = this.value.substring(0, 15);
+                }
+            });
+            
+            // Проверяем Firebase
+            setTimeout(() => {
+                if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                    console.log("Firebase загружен");
+                } else {
+                    console.warn("Firebase не загружен");
+                }
+            }, 1000);
+        });
+
+        // Временные заглушки для остальных функций
+        function leaveGame() {
+            if (currentGameId && playerName && db) {
+                db.ref(`games/${currentGameId}/players/${playerName}`).remove();
+            }
+            switchScreen('join');
+        }
+
+        // Экспортируем функции
+        window.joinGame = joinGame;
+        window.leaveGame = leaveGame;
     </script>
 </body>
 </html>
