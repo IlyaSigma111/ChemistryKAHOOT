@@ -1,5 +1,5 @@
 // ============================================
-// firebase-config.js - ХИМИЯ: КРЕМНИЙ (Glass Design) - ИСПРАВЛЕННЫЙ
+// firebase-config.js - ХИМИЯ: КРЕМНИЙ (Glass Design)
 // ============================================
 
 // 🔥 КОНФИГУРАЦИЯ FIREBASE
@@ -15,7 +15,7 @@ const firebaseConfig = {
 // Инициализация Firebase
 try {
     if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig); // ← ИСПРАВЛЕНО ЗДЕСЬ!
     }
     window.db = firebase.database();
     console.log("✅ Firebase инициализирован");
