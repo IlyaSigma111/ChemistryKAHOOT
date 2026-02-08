@@ -8,763 +8,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        /* GLASSMORPHISM STUDENT STYLES с FIX для iOS */
-        :root {
-            --glass-bg: rgba(255, 255, 255, 0.12);
-            --glass-border: rgba(255, 255, 255, 0.18);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-            --primary-glow: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --accent-glow: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --success-glow: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            --warning-glow: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --danger-glow: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        html {
-            height: 100%;
-            -webkit-text-size-adjust: 100%;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            color: white;
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-            position: relative;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
-        /* Fix для iOS Safari */
-        @supports (-webkit-touch-callout: none) {
-            body {
-                min-height: -webkit-fill-available;
-            }
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 10% 20%, rgba(120, 119, 198, 0.35) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(255, 119, 198, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
-            z-index: -1;
-        }
-        
-        /* GLASS КОНТЕЙНЕР с поддержкой Safari */
-        .student-container {
-            width: 100%;
-            max-width: 600px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 32px;
-            overflow: hidden;
-            box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            animation: glassFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Fallback для старых Safari */
-        @supports not (backdrop-filter: blur(20px)) {
-            .student-container {
-                background: rgba(26, 26, 46, 0.95);
-            }
-        }
-        
-        @keyframes glassFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
-        /* GLASS ЭКРАНЫ */
-        .screen {
-            display: none;
-            padding: 40px 30px;
-            animation: screenFade 0.4s ease;
-        }
-        
-        @keyframes screenFade {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        .screen.active {
-            display: block;
-        }
-        
-        /* GLASS ЭКРАН ВХОДА */
-        .login-box {
-            text-align: center;
-        }
-        
-        .logo {
-            font-size: 90px;
-            margin-bottom: 25px;
-            display: inline-block;
-            background: var(--accent-glow);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: float 4s ease-in-out infinite;
-            filter: drop-shadow(0 10px 20px rgba(79, 172, 254, 0.3));
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-12px) rotate(3deg); }
-        }
-        
-        .login-box h1 {
-            font-size: 2.4rem;
-            margin-bottom: 15px;
-            background: var(--primary-glow);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-        }
-        
-        .subtitle {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 40px;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            padding: 0 10px;
-        }
-        
-        /* GLASS ФОРМЫ для iOS */
-        .form-group {
-            margin-bottom: 30px;
-            text-align: left;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 18px 20px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.25);
-            border-radius: 16px;
-            color: white;
-            font-size: 1.1rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-family: inherit;
-            -webkit-appearance: none;
-            appearance: none;
-            font-weight: 500;
-        }
-        
-        /* Fix для iOS input */
-        .form-group input:focus {
-            outline: none;
-            border-color: #4facfe;
-            background: rgba(79, 172, 254, 0.25);
-            box-shadow: 
-                0 0 0 4px rgba(79, 172, 254, 0.15),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        .form-group input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        .code-input-container input {
-            font-family: 'Courier New', monospace;
-            font-size: 1.6rem;
-            letter-spacing: 2px;
-            text-align: center;
-            font-weight: 800;
-        }
-        
-        .code-hint {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9rem;
-            margin-top: 10px;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        /* GLASS КНОПКИ для touch устройств */
-        .glass-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            width: 100%;
-            padding: 20px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 15px 0;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 2px solid transparent;
-            color: white;
-            -webkit-user-select: none;
-            user-select: none;
-            touch-action: manipulation;
-        }
-        
-        /* Увеличиваем touch target для мобильных */
-        @media (hover: none) and (pointer: coarse) {
-            .glass-btn {
-                min-height: 60px;
-                padding: 20px;
-            }
-        }
-        
-        .glass-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.6s ease;
-        }
-        
-        .glass-btn:hover::before,
-        .glass-btn:active::before {
-            left: 100%;
-        }
-        
-        .btn-join {
-            background: linear-gradient(135deg, 
-                rgba(79, 172, 254, 0.3) 0%, 
-                rgba(0, 242, 254, 0.3) 100%);
-            border-color: rgba(79, 172, 254, 0.6);
-            box-shadow: 0 12px 35px rgba(79, 172, 254, 0.25);
-        }
-        
-        .btn-leave {
-            background: linear-gradient(135deg, 
-                rgba(255, 65, 108, 0.3) 0%, 
-                rgba(255, 75, 43, 0.3) 100%);
-            border-color: rgba(255, 65, 108, 0.6);
-            box-shadow: 0 12px 35px rgba(255, 65, 108, 0.25);
-        }
-        
-        .glass-btn:hover,
-        .glass-btn:active {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-            border-color: rgba(255, 255, 255, 0.6);
-        }
-        
-        /* Активное состояние для touch */
-        .glass-btn:active {
-            transform: translateY(-1px) scale(0.98);
-        }
-        
-        .login-info {
-            margin-top: 35px;
-            padding: 20px;
-            background: rgba(0, 242, 254, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 16px;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 0.95rem;
-            border: 1px solid rgba(0, 242, 254, 0.4);
-            line-height: 1.5;
-        }
-        
-        /* GLASS ЭКРАН ОЖИДАНИЯ */
-        .waiting-box {
-            text-align: center;
-        }
-        
-        .loader {
-            width: 80px;
-            height: 80px;
-            border: 4px solid rgba(255, 255, 255, 0.15);
-            border-top: 4px solid #4facfe;
-            border-radius: 50%;
-            margin: 0 auto 30px;
-            animation: spin 1.5s linear infinite;
-            box-shadow: 0 0 25px rgba(79, 172, 254, 0.3);
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .waiting-box h2 {
-            color: #4facfe;
-            margin-bottom: 15px;
-            font-size: 1.8rem;
-            font-weight: 800;
-        }
-        
-        .user-info {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 25px;
-            margin: 35px 0;
-            text-align: left;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-        }
-        
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-            align-items: center;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-item span {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        
-        .info-item strong, .info-item code {
-            color: #43e97b;
-            font-size: 1.2rem;
-            font-weight: 800;
-            text-shadow: 0 0 10px rgba(67, 233, 123, 0.3);
-        }
-        
-        .room-info {
-            margin: 25px 0;
-            color: #4facfe;
-            font-size: 1.2rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        
-        /* GLASS ЭКРАН ВОПРОСА */
-        .question-box {
-            height: 100%;
-        }
-        
-        .question-header {
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.25) 0%, 
-                rgba(118, 75, 162, 0.25) 100%);
-            padding: 20px 25px;
-            border-radius: 24px 24px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .question-meta {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .question-type {
-            background: rgba(0, 0, 0, 0.25);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 1rem;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            white-space: nowrap;
-        }
-        
-        .question-number {
-            color: white;
-            font-size: 1.3rem;
-            font-weight: 800;
-        }
-        
-        .question-content {
-            padding: 15px 0;
-        }
-        
-        .question-text {
-            font-size: 1.5rem;
-            color: white;
-            line-height: 1.4;
-            margin-bottom: 40px;
-            text-align: center;
-            padding: 0 10px;
-            font-weight: 700;
-            word-wrap: break-word;
-        }
-        
-        /* Оптимизация для мобильных */
-        @media (max-width: 768px) {
-            .question-text {
-                font-size: 1.3rem;
-                line-height: 1.5;
-            }
-        }
-        
-        .options {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .option-btn {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.25);
-            border-radius: 18px;
-            padding: 22px 20px;
-            color: white;
-            font-size: 1.1rem;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            touch-action: manipulation;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        
-        /* Увеличиваем touch target для вариантов ответов */
-        @media (hover: none) and (pointer: coarse) {
-            .option-btn {
-                min-height: 70px;
-            }
-        }
-        
-        .option-btn:hover,
-        .option-btn:active {
-            background: rgba(79, 172, 254, 0.3);
-            border-color: rgba(79, 172, 254, 0.6);
-            transform: translateY(-3px) scale(1.01);
-            box-shadow: 0 15px 35px rgba(79, 172, 254, 0.2);
-        }
-        
-        .option-btn.selected {
-            background: rgba(67, 233, 123, 0.3);
-            border-color: rgba(67, 233, 123, 0.6);
-            transform: scale(1.02);
-            box-shadow: 0 15px 35px rgba(67, 233, 123, 0.2);
-        }
-        
-        .option-letter {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 1.3rem;
-            flex-shrink: 0;
-            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.3);
-        }
-        
-        .option-btn.selected .option-letter {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        }
-        
-        .answer-status {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 16px;
-            margin-top: 25px;
-            color: #43e97b;
-            font-weight: 800;
-            font-size: 1.2rem;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            min-height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* GLASS ЭКРАН РЕЗУЛЬТАТА */
-        .result-box {
-            text-align: center;
-        }
-        
-        .result-box h2 {
-            color: #4facfe;
-            margin-bottom: 30px;
-            font-size: 2rem;
-            font-weight: 900;
-        }
-        
-        .result-content {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-radius: 24px;
-            padding: 35px;
-            margin-bottom: 35px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-        }
-        
-        .next-info {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 1.1rem;
-            font-weight: 500;
-        }
-        
-        .next-info p {
-            margin-bottom: 20px;
-        }
-        
-        /* Стили для отладки */
-        .debug-info {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.8);
-            color: #0f0;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 11px;
-            z-index: 10000;
-            max-width: 280px;
-            display: none;
-            line-height: 1.4;
-        }
-        
-        .error-message {
-            background: rgba(255, 0, 0, 0.25);
-            border: 1px solid rgba(255, 0, 0, 0.5);
-            color: #ff9999;
-            padding: 12px 15px;
-            border-radius: 12px;
-            margin: 10px 0;
-            text-align: center;
-            font-weight: 600;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-        
-        .error-message i {
-            margin-right: 10px;
-            font-size: 1.1rem;
-        }
-        
-        /* iOS specific fixes */
-        @supports (-webkit-touch-callout: none) {
-            /* Улучшаем читаемость на iOS */
-            .student-container {
-                background: rgba(26, 26, 46, 0.92);
-            }
-            
-            /* Увеличиваем контрастность текста */
-            .question-text,
-            .option-btn,
-            .form-group input {
-                color: rgba(255, 255, 255, 0.95);
-            }
-            
-            /* Увеличиваем размер шрифта для мобильных */
-            @media (max-width: 768px) {
-                html {
-                    font-size: 16px;
-                }
-                
-                .login-box h1 {
-                    font-size: 2rem;
-                }
-                
-                .question-text {
-                    font-size: 1.4rem;
-                }
-            }
-        }
-        
-        /* Prevent text size adjustment on orientation change */
-        html {
-            -webkit-text-size-adjust: 100%;
-            text-size-adjust: 100%;
-        }
-        
-        /* Prevent pull-to-refresh on mobile */
-        body {
-            overscroll-behavior-y: contain;
-        }
-        
-        /* Улучшаем скроллинг на iOS */
-        .scrollable {
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        /* Анимации уведомлений */
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-        
-        /* АДАПТИВНОСТЬ для очень маленьких экранов */
-        @media (max-width: 360px) {
-            body {
-                padding: 15px;
-            }
-            
-            .student-container {
-                border-radius: 24px;
-            }
-            
-            .screen {
-                padding: 25px 20px;
-            }
-            
-            .logo {
-                font-size: 70px;
-            }
-            
-            .login-box h1 {
-                font-size: 1.8rem;
-            }
-            
-            .form-group input {
-                padding: 16px 18px;
-                font-size: 1rem;
-            }
-            
-            .glass-btn {
-                padding: 18px;
-                font-size: 1.1rem;
-            }
-            
-            .question-header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-            
-            .question-text {
-                font-size: 1.2rem;
-                margin-bottom: 30px;
-            }
-            
-            .option-btn {
-                padding: 18px 15px;
-                font-size: 1rem;
-                gap: 15px;
-            }
-            
-            .option-letter {
-                width: 45px;
-                height: 45px;
-                font-size: 1.2rem;
-            }
-        }
-        
-        /* Фикс для iPhone notch */
-        @media (orientation: landscape) and (max-height: 500px) {
-            body {
-                align-items: flex-start;
-                padding-top: 40px;
-                padding-bottom: 40px;
-            }
-            
-            .student-container {
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-        }
+        /* ... все стили из предыдущего сообщения остаются ... */
     </style>
 </head>
 <body class="student-page">
-    <!-- Панель отладки -->
-    <div id="debugPanel" class="debug-info">
-        <div>Статус: <span id="debugStatus">Загрузка...</span></div>
-        <div>Firebase: <span id="firebaseStatus">Проверка...</span></div>
-    </div>
+    <!-- ... HTML структура остается прежней ... -->
     
     <div class="student-container">
         <!-- GLASS ЭКРАН 1: ВХОД -->
@@ -884,20 +132,613 @@
         </div>
     </div>
 
-    <!-- Firebase config должен быть загружен -->
+    <!-- Firebase config -->
     <script src="firebase-config.js"></script>
 
     <script>
-        // Основной код student.js остается тот же, что работал на ПК
-        // Но добавляем несколько фиксов для iOS
-        
         // ============================================
-        // ФИКСЫ ДЛЯ iOS
+        // ОСНОВНОЙ КОД STUDENT
         // ============================================
-        
-        // Предотвращаем масштабирование при фокусе на input
+
+        let currentGameId = null;
+        let playerName = null;
+        let currentQuestion = null;
+        let hasAnswered = false;
+        let selectedOption = null;
+        let db = null;
+        let gameRef = null;
+
+        // DOM элементы
+        const joinScreen = document.getElementById('joinScreen');
+        const waitingScreen = document.getElementById('waitingScreen');
+        const questionScreen = document.getElementById('questionScreen');
+        const resultScreen = document.getElementById('resultScreen');
+        const playerNameInput = document.getElementById('playerName');
+        const gameCodeInput = document.getElementById('gameCode');
+        const joinButton = document.getElementById('joinButton');
+        const displayName = document.getElementById('displayName');
+        const displayCode = document.getElementById('displayCode');
+        const displayScore = document.getElementById('displayScore');
+        const roomPlayers = document.getElementById('roomPlayers');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const answerStatus = document.getElementById('answerStatus');
+        const resultContent = document.getElementById('resultContent');
+        const currentQ = document.getElementById('currentQ');
+        const questionType = document.getElementById('questionType');
+        const errorContainer = document.getElementById('errorContainer');
+
+        // ============================================
+        // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        // ============================================
+
+        function showError(message) {
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i> ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                errorContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        function showNotification(message, type = "info") {
+            const colors = {
+                success: '#43e97b',
+                error: '#ff416c',
+                warning: '#f093fb',
+                info: '#4facfe'
+            };
+            
+            const icon = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(30px);
+                -webkit-backdrop-filter: blur(30px);
+                border: 1px solid ${colors[type]}40;
+                color: white;
+                padding: 18px 28px;
+                border-radius: 18px;
+                font-weight: 700;
+                z-index: 10000;
+                animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                max-width: 350px;
+                border-left: 4px solid ${colors[type]};
+            `;
+            notification.innerHTML = `
+                <span style="font-size: 1.3rem;">${icon[type]}</span>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        document.body.removeChild(notification);
+                    }
+                }, 400);
+            }, 3000);
+        }
+
+        function switchScreen(screenName) {
+            [joinScreen, waitingScreen, questionScreen, resultScreen].forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            switch(screenName) {
+                case 'join':
+                    joinScreen.classList.add('active');
+                    break;
+                case 'waiting':
+                    waitingScreen.classList.add('active');
+                    break;
+                case 'question':
+                    questionScreen.classList.add('active');
+                    break;
+                case 'result':
+                    resultScreen.classList.add('active');
+                    break;
+            }
+        }
+
+        // ============================================
+        // ОСНОВНАЯ ФУНКЦИЯ ПОДКЛЮЧЕНИЯ
+        // ============================================
+
+        function joinGame() {
+            console.log("=== ПОПЫТКА ПОДКЛЮЧЕНИЯ ===");
+            
+            // Очистить предыдущие ошибки
+            errorContainer.innerHTML = '';
+            
+            // Получить значения
+            const name = playerNameInput.value.trim();
+            const code = gameCodeInput.value.trim();
+            
+            // Проверка имени
+            if (!name || name.length < 2) {
+                showError("Введите имя (минимум 2 символа)");
+                playerNameInput.focus();
+                return;
+            }
+            
+            // Проверка кода
+            if (!code || code.length !== 8 || !/^\d{8}$/.test(code)) {
+                showError("Введите 8 цифр кода викторины");
+                gameCodeInput.focus();
+                return;
+            }
+            
+            // Проверить Firebase
+            if (typeof firebase === 'undefined' || !firebase.apps.length) {
+                showError("Firebase не загружен. Обновите страницу.");
+                return;
+            }
+            
+            if (!window.db) {
+                window.db = firebase.database();
+            }
+            
+            db = window.db;
+            
+            // Сохранить данные
+            playerName = name;
+            currentGameId = "game_" + code;
+            
+            // Показать состояние загрузки
+            const originalText = joinButton.innerHTML;
+            joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ПОДКЛЮЧЕНИЕ...';
+            joinButton.disabled = true;
+            
+            console.log(`Проверяю игру: ${currentGameId}`);
+            
+            // Проверить существование викторины
+            db.ref(`games/${currentGameId}`).once('value')
+                .then(snapshot => {
+                    if (!snapshot.exists()) {
+                        showError(`Викторина с кодом ${code} не найдена!`);
+                        joinButton.innerHTML = originalText;
+                        joinButton.disabled = false;
+                        console.log("Викторина не найдена");
+                        return;
+                    }
+                    
+                    const game = snapshot.val();
+                    console.log("Викторина найдена:", game);
+                    
+                    // Проверить статус
+                    if (game.status === "finished") {
+                        showError("Эта викторина уже завершена");
+                        joinButton.innerHTML = originalText;
+                        joinButton.disabled = false;
+                        return;
+                    }
+                    
+                    // Проверить имя игрока
+                    if (game.players && game.players[name]) {
+                        showError("Участник с таким именем уже есть в викторине!");
+                        joinButton.innerHTML = originalText;
+                        joinButton.disabled = false;
+                        return;
+                    }
+                    
+                    console.log("Регистрирую игрока...");
+                    
+                    // Зарегистрировать игрока
+                    const playerData = {
+                        name: name,
+                        joined: Date.now(),
+                        score: 0,
+                        device: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? "📱 Телефон" : "💻 Компьютер"
+                    };
+                    
+                    return db.ref(`games/${currentGameId}/players/${name}`).set(playerData);
+                })
+                .then(() => {
+                    if (!playerName) return;
+                    
+                    console.log("Игрок успешно зарегистрирован");
+                    
+                    // Обновить UI
+                    displayName.textContent = playerName;
+                    displayCode.textContent = code;
+                    
+                    // Переключить экран
+                    switchScreen('waiting');
+                    
+                    // Начать прослушивание
+                    listenToGame();
+                    
+                    // Показать уведомление
+                    showNotification(`✅ Подключено как ${playerName}`, "success");
+                    
+                    // Восстановить кнопку
+                    joinButton.innerHTML = originalText;
+                    joinButton.disabled = false;
+                    
+                })
+                .catch(error => {
+                    console.error("Ошибка подключения:", error);
+                    showError(`Ошибка: ${error.message || "Неизвестная ошибка"}`);
+                    joinButton.innerHTML = originalText;
+                    joinButton.disabled = false;
+                });
+        }
+
+        // ============================================
+        // ПРОСЛУШИВАНИЕ ИГРЫ
+        // ============================================
+
+        function listenToGame() {
+            if (!currentGameId || !db) {
+                console.error("Не могу слушать игру: нет ID или DB");
+                return;
+            }
+            
+            console.log(`🎮 Начинаю слушать игру: ${currentGameId}`);
+            
+            gameRef = db.ref(`games/${currentGameId}`);
+            
+            gameRef.on('value', snapshot => {
+                const game = snapshot.val();
+                if (!game) {
+                    console.log("Игра удалена");
+                    showNotification("Игра была удалена преподавателем", "info");
+                    leaveGame();
+                    return;
+                }
+                
+                // Обновляем счетчик игроков
+                if (game.players) {
+                    const playerCount = Object.keys(game.players).length;
+                    roomPlayers.textContent = playerCount;
+                    
+                    // Обновляем счет игрока
+                    if (game.players[playerName]) {
+                        displayScore.textContent = game.players[playerName].score || 0;
+                    }
+                }
+                
+                // Обрабатываем статус игры
+                handleGameStatus(game);
+                
+            }, error => {
+                console.error("Ошибка слушателя:", error);
+                showNotification("Ошибка соединения с сервером", "error");
+            });
+        }
+
+        function handleGameStatus(game) {
+            const currentQuestionId = game.currentQuestion;
+            const status = game.status;
+            
+            console.log(`Статус игры: ${status}, вопрос: ${currentQuestionId}`);
+            
+            switch (status) {
+                case "lobby":
+                case "waiting":
+                    handleLobby();
+                    break;
+                    
+                case "question_active":
+                    if (currentQuestionId && (!currentQuestion || currentQuestion.id != currentQuestionId || !hasAnswered)) {
+                        handleQuestionActive(game, currentQuestionId);
+                    }
+                    break;
+                    
+                case "showing_results":
+                    handleShowingResults(game, currentQuestionId);
+                    break;
+                    
+                case "finished":
+                    handleGameFinished();
+                    break;
+            }
+        }
+
+        function handleLobby() {
+            if (!waitingScreen.classList.contains('active')) {
+                switchScreen('waiting');
+            }
+            
+            hasAnswered = false;
+            selectedOption = null;
+        }
+
+        function handleQuestionActive(game, questionId) {
+            // Проверяем загружены ли вопросы
+            if (!window.QUIZ_DATA || !window.QUIZ_DATA.questions) {
+                console.error("QUIZ_DATA не загружен!");
+                showNotification("Ошибка загрузки вопросов", "error");
+                return;
+            }
+            
+            // Преобразуем ID вопроса
+            const questionNumber = parseInt(questionId);
+            
+            // Найти вопрос
+            currentQuestion = window.QUIZ_DATA.questions.find(q => q.id === questionNumber);
+            
+            if (!currentQuestion) {
+                console.error(`Вопрос с ID ${questionId} не найден`);
+                return;
+            }
+            
+            console.log(`Загружен вопрос: ${currentQuestion.text}`);
+            
+            hasAnswered = false;
+            selectedOption = null;
+            
+            switchScreen('question');
+            displayQuestion(currentQuestion);
+        }
+
+        function displayQuestion(question) {
+            if (!question) return;
+            
+            const questionIndex = window.QUIZ_DATA.questions.findIndex(q => q.id === question.id) + 1;
+            currentQ.textContent = questionIndex;
+            
+            // Установить тип сложности
+            const difficultyColors = {
+                easy: '#43e97b',
+                medium: '#f093fb',
+                hard: '#ff416c'
+            };
+            
+            questionType.textContent = question.difficulty === 'easy' ? 'ЛЁГКИЙ' : 
+                                     question.difficulty === 'medium' ? 'СРЕДНИЙ' : 'СЛОЖНЫЙ';
+            questionType.style.borderColor = difficultyColors[question.difficulty];
+            
+            questionText.textContent = question.text;
+            
+            // Очистить и добавить варианты
+            optionsContainer.innerHTML = '';
+            if (question.options && Array.isArray(question.options)) {
+                question.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'option-btn';
+                    button.innerHTML = `
+                        <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+                        <span class="option-text">${option}</span>
+                    `;
+                    button.onclick = () => selectAnswer(index, button);
+                    optionsContainer.appendChild(button);
+                });
+            }
+            
+            answerStatus.textContent = "Выберите вариант ответа";
+            answerStatus.style.color = "#4facfe";
+        }
+
+        function selectAnswer(answerIndex, buttonElement) {
+            if (hasAnswered || !currentQuestion || !currentGameId || !playerName || !db) {
+                console.log("Не могу ответить сейчас");
+                return;
+            }
+            
+            selectedOption = answerIndex;
+            
+            // Выделить выбранный вариант
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            buttonElement.classList.add('selected');
+            
+            submitAnswer(answerIndex);
+        }
+
+        function submitAnswer(answerIndex) {
+            if (hasAnswered) return;
+            
+            hasAnswered = true;
+            
+            // Заблокировать кнопки
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            // Проверить правильность
+            const isCorrect = (answerIndex === currentQuestion.correct);
+            
+            const answerData = {
+                answerIndex: answerIndex,
+                isCorrect: isCorrect,
+                timestamp: Date.now()
+            };
+            
+            console.log(`Отправляю ответ: ${answerIndex}, правильно: ${isCorrect}`);
+            
+            db.ref(`games/${currentGameId}/answers/${currentQuestion.id}/${playerName}`).set(answerData)
+                .then(() => {
+                    console.log("Ответ успешно отправлен");
+                    
+                    if (isCorrect) {
+                        answerStatus.innerHTML = '<i class="fas fa-check-circle"></i> Правильно!';
+                        answerStatus.style.color = '#43e97b';
+                        
+                        // Обновить счет
+                        const points = currentQuestion.points || 1;
+                        db.ref(`games/${currentGameId}/players/${playerName}/score`).transaction(score => {
+                            return (score || 0) + points;
+                        }).then(() => {
+                            console.log("Счет обновлен");
+                        });
+                    } else {
+                        answerStatus.innerHTML = '<i class="fas fa-times-circle"></i> Неправильно!';
+                        answerStatus.style.color = '#ff416c';
+                    }
+                })
+                .catch(error => {
+                    console.error("Ошибка отправки ответа:", error);
+                    answerStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ошибка отправки';
+                    answerStatus.style.color = '#f093fb';
+                });
+        }
+
+        function handleShowingResults(game, questionId) {
+            if (!currentQuestion || currentQuestion.id != questionId) {
+                const questionNumber = parseInt(questionId);
+                currentQuestion = window.QUIZ_DATA.questions.find(q => q.id === questionNumber);
+            }
+            
+            if (!currentQuestion) return;
+            
+            switchScreen('result');
+            
+            // Получить результат пользователя
+            db.ref(`games/${currentGameId}/answers/${currentQuestion.id}/${playerName}`).once('value')
+                .then(snapshot => {
+                    const userAnswer = snapshot.val();
+                    showResult(userAnswer, currentQuestion);
+                })
+                .catch(() => {
+                    showResult(null, currentQuestion);
+                });
+        }
+
+        function showResult(userAnswer, question) {
+            let resultHTML = '';
+            
+            if (!question || !question.options) {
+                resultHTML = '<p>Ошибка загрузки результата</p>';
+                resultContent.innerHTML = resultHTML;
+                return;
+            }
+            
+            const correctAnswerText = question.options[question.correct];
+            
+            if (userAnswer && userAnswer.answerIndex >= 0) {
+                const isCorrect = userAnswer.isCorrect;
+                const userAnswerText = question.options[userAnswer.answerIndex];
+                
+                resultHTML = `
+                    <div style="color: ${isCorrect ? '#43e97b' : '#ff416c'}; font-size: 1.8rem; margin-bottom: 25px; font-weight: 900;">
+                        <i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                        ${isCorrect ? 'ПРАВИЛЬНО!' : 'НЕПРАВИЛЬНО'}
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 16px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="color: rgba(255,255,255,0.7); margin-bottom: 8px; font-size: 1rem;">Ваш ответ:</div>
+                        <div style="color: white; font-size: 1.3rem; font-weight: 700;">${userAnswerText}</div>
+                    </div>
+                    <div style="background: rgba(67, 233, 123, 0.15); padding: 20px; border-radius: 16px; margin: 15px 0; border: 1px solid rgba(67, 233, 123, 0.3);">
+                        <div style="color: rgba(255,255,255,0.7); margin-bottom: 8px; font-size: 1rem;">Правильный ответ:</div>
+                        <div style="color: #43e97b; font-size: 1.3rem; font-weight: 900;">${correctAnswerText}</div>
+                    </div>
+                    <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="color: rgba(255,255,255,0.85); font-style: italic; font-size: 1.1rem; line-height: 1.5;">${question.explanation || 'Объяснение отсутствует'}</div>
+                    </div>
+                `;
+            } else {
+                resultHTML = `
+                    <div style="color: #f093fb; font-size: 1.8rem; margin-bottom: 25px; font-weight: 900;">
+                        <i class="fas fa-clock"></i> ВЫ НЕ УСПЕЛИ ОТВЕТИТЬ
+                    </div>
+                    <div style="background: rgba(67, 233, 123, 0.15); padding: 20px; border-radius: 16px; margin: 15px 0; border: 1px solid rgba(67, 233, 123, 0.3);">
+                        <div style="color: rgba(255,255,255,0.7); margin-bottom: 8px; font-size: 1rem;">Правильный ответ:</div>
+                        <div style="color: #43e97b; font-size: 1.3rem; font-weight: 900;">${correctAnswerText}</div>
+                    </div>
+                    <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="color: rgba(255,255,255,0.85); font-style: italic; font-size: 1.1rem; line-height: 1.5;">${question.explanation || 'Объяснение отсутствует'}</div>
+                    </div>
+                `;
+            }
+            
+            resultContent.innerHTML = resultHTML;
+        }
+
+        function handleGameFinished() {
+            switchScreen('result');
+            
+            db.ref(`games/${currentGameId}/players/${playerName}`).once('value')
+                .then(snapshot => {
+                    const playerData = snapshot.val();
+                    const score = playerData ? playerData.score || 0 : 0;
+                    
+                    resultContent.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 2.2rem; color: #4facfe; margin-bottom: 25px; font-weight: 900;">
+                                <i class="fas fa-flag-checkered"></i> ВИКТОРИНА ЗАВЕРШЕНА
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; margin: 25px 0; border: 2px solid rgba(79, 172, 254, 0.3);">
+                                <div style="color: #43e97b; font-size: 3rem; margin-bottom: 10px; font-weight: 900; text-shadow: 0 0 20px rgba(67, 233, 123, 0.3);">${score} очков</div>
+                                <div style="color: rgba(255,255,255,0.85); font-size: 1.2rem;">Ваш финальный результат</div>
+                            </div>
+                            <button onclick="location.reload()" class="glass-btn btn-join" style="margin-top: 20px; width: auto; padding: 15px 30px;">
+                                <i class="fas fa-redo"></i> НАЧАТЬ ЗАНОВО
+                            </button>
+                        </div>
+                    `;
+                });
+        }
+
+        function leaveGame() {
+            console.log("Выхожу из игры...");
+            
+            if (currentGameId && playerName && db) {
+                try {
+                    // Отписаться от слушателя
+                    if (gameRef) {
+                        gameRef.off('value');
+                    }
+                    
+                    // Удалить игрока
+                    db.ref(`games/${currentGameId}/players/${playerName}`).remove()
+                        .then(() => {
+                            console.log("Игрок удален из игры");
+                        })
+                        .catch(error => {
+                            console.error("Ошибка удаления игрока:", error);
+                        });
+                } catch (e) {
+                    console.error("Ошибка при выходе:", e);
+                }
+            }
+            
+            resetGameState();
+            switchScreen('join');
+            
+            showNotification("Вы вышли из викторины", "info");
+        }
+
+        function resetGameState() {
+            currentGameId = null;
+            playerName = null;
+            currentQuestion = null;
+            hasAnswered = false;
+            selectedOption = null;
+            gameRef = null;
+            playerNameInput.value = '';
+            gameCodeInput.value = '';
+            displayScore.textContent = '0';
+        }
+
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Устанавливаем фокус на имя при загрузке
+            console.log("🎓 Студенческий клиент загружен");
+            
+            // iOS фикс для фокуса
             setTimeout(() => {
                 const nameInput = document.getElementById('playerName');
                 if (nameInput) {
@@ -905,52 +746,55 @@
                 }
             }, 500);
             
-            // Фикс для iOS Safari - предотвращаем zoom при фокусе
-            const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    // iOS Safari fix - устанавливаем font-size 16px для предотвращения zoom
-                    this.style.fontSize = '16px';
-                });
-                
-                input.addEventListener('blur', function() {
-                    // Возвращаем исходный размер шрифта
-                    this.style.fontSize = '';
-                });
+            // Проверить Firebase через секунду
+            setTimeout(() => {
+                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+                    console.log("✅ Firebase загружен");
+                    window.db = firebase.database();
+                } else {
+                    console.warn("⚠️ Firebase не загружен");
+                }
+            }, 1000);
+            
+            // Назначить обработчик кнопке
+            joinButton.addEventListener('click', joinGame);
+            
+            // Обработчики Enter
+            playerNameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    gameCodeInput.focus();
+                }
             });
             
-            // Предотвращаем копирование в input кода
-            const gameCodeInput = document.getElementById('gameCode');
-            if (gameCodeInput) {
-                gameCodeInput.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData('text');
-                    // Оставляем только цифры
-                    const numbersOnly = pastedText.replace(/\D/g, '');
-                    // Вставляем первые 8 цифр
-                    this.value = numbersOnly.substring(0, 8);
-                });
-            }
+            gameCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    joinGame();
+                }
+            });
             
-            // Улучшаем отображение на мобильных
-            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-                // Добавляем класс для мобильных
-                document.body.classList.add('is-mobile');
-                
-                // Увеличиваем зоны клика для touch устройств
-                const buttons = document.querySelectorAll('.glass-btn, .option-btn');
-                buttons.forEach(btn => {
-                    btn.style.minHeight = '60px';
-                });
-            }
+            // Валидация ввода кода
+            gameCodeInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '');
+                if (this.value.length > 8) {
+                    this.value = this.value.substring(0, 8);
+                }
+            });
+            
+            // Валидация имени
+            playerNameInput.addEventListener('input', function() {
+                if (this.value.length > 15) {
+                    this.value = this.value.substring(0, 15);
+                }
+            });
+            
+            // Автофокус на имя
+            playerNameInput.focus();
         });
-        
-        // Остальной код student.js остается без изменений
-        // ... [весь ваш JavaScript код отсюда]
-        
-        // Просто оставлю это как заглушку, чтобы код не был слишком длинным
-        // Весь функциональный JavaScript из предыдущей рабочей версии должен быть здесь
-        
+
+        // Экспортируем функции для глобального доступа
+        window.joinGame = joinGame;
+        window.leaveGame = leaveGame;
+        window.selectAnswer = selectAnswer;
     </script>
 </body>
 </html>
