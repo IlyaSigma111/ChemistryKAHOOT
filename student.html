@@ -560,9 +560,41 @@
                 font-size: 1.1rem;
             }
         }
+        
+        /* Стили для отладки */
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 10000;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            color: #ff6666;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="student-page">
+    <!-- Панель отладки -->
+    <div id="debugPanel" class="debug-info">
+        <div>Статус: <span id="debugStatus">Загрузка...</span></div>
+        <div>Firebase: <span id="firebaseStatus">Проверка...</span></div>
+    </div>
+    
     <div class="student-container">
         <!-- GLASS ЭКРАН 1: ВХОД -->
         <div id="joinScreen" class="screen active">
@@ -572,6 +604,8 @@
                 <p class="subtitle">Подключитесь к викторине по химии. Тема: Кремний и его соединения.</p>
                 
                 <div class="login-form">
+                    <div id="errorContainer"></div>
+                    
                     <div class="form-group">
                         <label><i class="fas fa-user"></i> Ваше имя:</label>
                         <input type="text" id="playerName" 
@@ -594,7 +628,7 @@
                         </div>
                     </div>
                     
-                    <button onclick="joinGame()" class="glass-btn btn-join">
+                    <button id="joinButton" class="glass-btn btn-join">
                         <i class="fas fa-gamepad"></i> ПОДКЛЮЧИТЬСЯ К ВИКТОРИНЕ
                     </button>
                     
@@ -674,12 +708,31 @@
         </div>
     </div>
 
-    <!-- Firebase config -->
-    <script src="firebase-config.js"></script>
+    <!-- Встроенная конфигурация Firebase (если внешний файл не работает) -->
+    <script>
+        // Проверка Firebase
+        function checkFirebase() {
+            try {
+                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+                    console.log("✅ Firebase загружен");
+                    document.getElementById('firebaseStatus').textContent = '✅ Загружен';
+                    return firebase.database();
+                } else {
+                    console.log("❌ Firebase не загружен");
+                    document.getElementById('firebaseStatus').textContent = '❌ Не загружен';
+                    return null;
+                }
+            } catch (error) {
+                console.error("Ошибка Firebase:", error);
+                document.getElementById('firebaseStatus').textContent = '❌ Ошибка: ' + error.message;
+                return null;
+            }
+        }
+    </script>
 
     <script>
         // ============================================
-        // ДАННЫЕ ВИКТОРИНЫ ДЛЯ СТУДЕНТА
+        // ДАННЫЕ ВИКТОРИНЫ
         // ============================================
 
         const QUIZ_DATA = {
@@ -734,7 +787,7 @@
         };
 
         // ============================================
-        // student.js - GLASSMORPHISM ВЕРСИЯ
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
         // ============================================
 
         let currentGameId = null;
@@ -742,7 +795,7 @@
         let currentQuestion = null;
         let hasAnswered = false;
         let selectedOption = null;
-        let db = null; // Firebase database instance
+        let db = null;
 
         // DOM элементы
         const joinScreen = document.getElementById('joinScreen');
@@ -751,6 +804,7 @@
         const resultScreen = document.getElementById('resultScreen');
         const playerNameInput = document.getElementById('playerName');
         const gameCodeInput = document.getElementById('gameCode');
+        const joinButton = document.getElementById('joinButton');
         const displayName = document.getElementById('displayName');
         const displayCode = document.getElementById('displayCode');
         const roomPlayers = document.getElementById('roomPlayers');
@@ -760,134 +814,162 @@
         const resultContent = document.getElementById('resultContent');
         const currentQ = document.getElementById('currentQ');
         const questionType = document.getElementById('questionType');
+        const errorContainer = document.getElementById('errorContainer');
+        const debugPanel = document.getElementById('debugPanel');
+        const debugStatus = document.getElementById('debugStatus');
 
-        // ================ ИНИЦИАЛИЗАЦИЯ FIREBASE ================
+        // ============================================
+        // ОСНОВНЫЕ ФУНКЦИИ
+        // ============================================
 
-        function initFirebase() {
-            try {
-                // Если firebase-config.js уже инициализировал приложение
-                if (firebase.apps.length > 0) {
-                    db = firebase.database();
-                    console.log("✅ Firebase уже инициализирован");
-                } else {
-                    console.log("❌ Firebase не инициализирован");
-                    showNotification("Ошибка подключения к серверу", "error");
-                }
-            } catch (error) {
-                console.error("Ошибка инициализации Firebase:", error);
-                showNotification("Ошибка подключения: " + error.message, "error");
-            }
+        function showError(message) {
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i> ${message}
+                </div>
+            `;
+            
+            // Автоматически скрыть через 5 секунд
+            setTimeout(() => {
+                errorContainer.innerHTML = '';
+            }, 5000);
         }
 
-        // ================ GLASS ФУНКЦИИ ================
+        function showDebug(message) {
+            debugStatus.textContent = message;
+            console.log("DEBUG:", message);
+        }
 
         function joinGame() {
-            // Проверяем инициализацию Firebase
-            if (!db) {
-                initFirebase();
-                if (!db) {
-                    showNotification("Ошибка подключения к серверу", "error");
-                    return;
-                }
-            }
-
+            console.log("=== ФУНКЦИЯ joinGame ВЫЗВАНА ===");
+            
+            // Очистить предыдущие ошибки
+            errorContainer.innerHTML = '';
+            
+            // Получить значения
             const name = playerNameInput.value.trim();
             const code = gameCodeInput.value.trim();
             
+            showDebug(`Ввод: имя="${name}", код="${code}"`);
+            
+            // Проверка имени
             if (!name || name.length < 2) {
-                showNotification("Введите имя (минимум 2 символа)", "warning");
+                showError("Введите имя (минимум 2 символа)");
                 playerNameInput.focus();
                 return;
             }
             
-            if (!code || code.length !== 8 || !/^\d+$/.test(code)) {
-                showNotification("Введите 8 цифр кода викторины", "warning");
+            // Проверка кода
+            if (!code || code.length !== 8 || !/^\d{8}$/.test(code)) {
+                showError("Введите 8 цифр кода викторины");
                 gameCodeInput.focus();
                 return;
             }
             
+            // Проверить Firebase
+            db = checkFirebase();
+            if (!db) {
+                showError("Ошибка подключения к серверу. Проверьте Firebase конфигурацию.");
+                showDebug("Firebase не инициализирован");
+                return;
+            }
+            
+            showDebug("Firebase OK, проверяю викторину...");
+            
+            // Сохранить данные
             playerName = name;
             currentGameId = "game_" + code;
             
-            console.log(`🎮 Подключаюсь как "${name}" к викторине ${code}`);
-            
-            // Показываем загрузку
-            const joinButton = document.querySelector('.btn-join');
+            // Показать состояние загрузки
             const originalText = joinButton.innerHTML;
             joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ПОДКЛЮЧЕНИЕ...';
             joinButton.disabled = true;
             
-            // Проверить викторину
-            db.ref(`games/${currentGameId}`).once('value').then(snapshot => {
-                if (!snapshot.exists()) {
-                    showNotification("Викторина не найдена! Проверьте код", "error");
-                    joinButton.innerHTML = originalText;
-                    joinButton.disabled = false;
-                    return;
-                }
-                
-                const game = snapshot.val();
-                
-                // Проверить статус игры
-                if (game.status === "finished") {
-                    showNotification("Эта викторина уже завершена", "error");
-                    joinButton.innerHTML = originalText;
-                    joinButton.disabled = false;
-                    return;
-                }
-                
-                // Проверить уникальность имени
-                if (game.players && game.players[name]) {
-                    showNotification("Участник с таким именем уже есть!", "warning");
-                    joinButton.innerHTML = originalText;
-                    joinButton.disabled = false;
-                    return;
-                }
-                
-                // Зарегистрироваться
-                const playerData = {
-                    name: name,
-                    joined: Date.now(),
-                    score: 0,
-                    device: /Mobi|Android/i.test(navigator.userAgent) ? "📱 Телефон" : "💻 Компьютер"
-                };
-                
-                db.ref(`games/${currentGameId}/players/${name}`).set(playerData).then(() => {
+            // Проверить существование викторины
+            db.ref(`games/${currentGameId}`).once('value')
+                .then(snapshot => {
+                    showDebug("Получен ответ от Firebase");
+                    
+                    if (!snapshot.exists()) {
+                        showError(`Викторина с кодом ${code} не найдена!`);
+                        joinButton.innerHTML = originalText;
+                        joinButton.disabled = false;
+                        showDebug("Викторина не найдена");
+                        return;
+                    }
+                    
+                    const game = snapshot.val();
+                    showDebug(`Статус викторины: ${game.status || 'неизвестно'}`);
+                    
+                    // Проверить статус
+                    if (game.status === "finished") {
+                        showError("Эта викторина уже завершена");
+                        joinButton.innerHTML = originalText;
+                        joinButton.disabled = false;
+                        return;
+                    }
+                    
+                    // Проверить имя игрока
+                    if (game.players && game.players[name]) {
+                        showError("Участник с таким именем уже есть в викторине!");
+                        joinButton.innerHTML = originalText;
+                        joinButton.disabled = false;
+                        return;
+                    }
+                    
+                    // Зарегистрировать игрока
+                    showDebug("Регистрирую игрока...");
+                    const playerData = {
+                        name: name,
+                        joined: Date.now(),
+                        score: 0,
+                        device: /Mobi|Android/i.test(navigator.userAgent) ? "📱 Телефон" : "💻 Компьютер"
+                    };
+                    
+                    return db.ref(`games/${currentGameId}/players/${name}`).set(playerData);
+                })
+                .then(() => {
+                    if (!playerName) return; // Если была ошибка ранее
+                    
+                    showDebug("Игрок зарегистрирован");
+                    
                     // Обновить UI
-                    displayName.textContent = name;
+                    displayName.textContent = playerName;
                     displayCode.textContent = code;
                     
                     // Переключить экран
                     switchScreen('waiting');
                     
-                    // Слушать викторину
+                    // Начать прослушивание
                     listenToGame();
                     
-                    console.log(`✅ Подключен как ${name} к викторине ${code}`);
-                    showNotification(`Подключено к викторине как ${name}`, "success");
-                    
-                }).catch(error => {
-                    showNotification("Ошибка подключения: " + error.message, "error");
+                    // Показать уведомление
+                    showNotification(`Подключено как ${playerName}`, "success");
+                    showDebug("Подключение успешно");
+                })
+                .catch(error => {
+                    console.error("Ошибка подключения:", error);
+                    showError(`Ошибка подключения: ${error.message}`);
                     joinButton.innerHTML = originalText;
                     joinButton.disabled = false;
+                    showDebug(`Ошибка: ${error.message}`);
                 });
-                
-            }).catch(error => {
-                showNotification("Ошибка сети: " + error.message, "error");
-                joinButton.innerHTML = originalText;
-                joinButton.disabled = false;
-            });
         }
 
         function listenToGame() {
-            if (!currentGameId || !db) return;
+            if (!currentGameId || !db) {
+                showDebug("Ошибка: нет gameId или db");
+                return;
+            }
             
-            console.log(`👂 Слушаю викторину ${currentGameId}`);
+            showDebug(`Начинаю слушать викторину: ${currentGameId}`);
             
-            db.ref(`games/${currentGameId}`).on('value', snapshot => {
+            const gameRef = db.ref(`games/${currentGameId}`);
+            
+            gameRef.on('value', snapshot => {
                 const game = snapshot.val();
                 if (!game) {
-                    console.log("Викторина удалена");
+                    showDebug("Викторина удалена");
                     showNotification("Викторина была удалена", "info");
                     leaveGame();
                     return;
@@ -897,10 +979,6 @@
                 if (game.players) {
                     const playerCount = Object.keys(game.players).length;
                     roomPlayers.textContent = playerCount;
-                    roomPlayers.style.animation = 'none';
-                    setTimeout(() => {
-                        roomPlayers.style.animation = 'pulse 0.5s ease';
-                    }, 10);
                 }
                 
                 const currentQuestionId = game.currentQuestion;
@@ -912,7 +990,7 @@
                         break;
                         
                     case "question_active":
-                        if (currentQuestionId && (!currentQuestion || currentQuestion.id !== currentQuestionId || !hasAnswered)) {
+                        if (currentQuestionId) {
                             handleQuestionActive(game, currentQuestionId);
                         }
                         break;
@@ -924,13 +1002,10 @@
                     case "finished":
                         handleGameFinished();
                         break;
-                        
-                    default:
-                        console.log("Неизвестный статус:", game.status);
                 }
             }, error => {
                 console.error("Ошибка слушателя:", error);
-                showNotification("Ошибка соединения", "error");
+                showDebug(`Ошибка слушателя: ${error.message}`);
             });
         }
 
@@ -939,16 +1014,14 @@
                 switchScreen('waiting');
             }
             
-            if (hasAnswered) {
-                hasAnswered = false;
-                selectedOption = null;
-            }
+            hasAnswered = false;
+            selectedOption = null;
         }
 
         function handleQuestionActive(game, questionId) {
             currentQuestion = QUIZ_DATA.questions.find(q => q.id === questionId);
             if (!currentQuestion) {
-                console.log("Вопрос не найден:", questionId);
+                showDebug(`Вопрос ${questionId} не найден`);
                 return;
             }
             
@@ -957,43 +1030,26 @@
             
             switchScreen('question');
             displayQuestion(currentQuestion);
-            
-            // Анимация появления вопроса
-            setTimeout(() => {
-                document.querySelectorAll('.option-btn').forEach((btn, index) => {
-                    btn.style.opacity = '0';
-                    btn.style.transform = 'translateY(20px)';
-                    setTimeout(() => {
-                        btn.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-                        btn.style.opacity = '1';
-                        btn.style.transform = 'translateY(0)';
-                    }, index * 100);
-                });
-            }, 300);
         }
 
         function displayQuestion(question) {
             const questionIndex = QUIZ_DATA.questions.findIndex(q => q.id === question.id) + 1;
             currentQ.textContent = questionIndex;
             
+            // Установить тип сложности
             const difficultyColors = {
                 easy: '#43e97b',
                 medium: '#f093fb',
                 hard: '#ff416c'
             };
             
-            const difficultyTexts = {
-                easy: 'ЛЁГКИЙ',
-                medium: 'СРЕДНИЙ',
-                hard: 'СЛОЖНЫЙ'
-            };
-            
-            questionType.textContent = difficultyTexts[question.difficulty];
-            questionType.style.background = `linear-gradient(135deg, ${difficultyColors[question.difficulty]}40, ${difficultyColors[question.difficulty]}20)`;
-            questionType.style.borderColor = `${difficultyColors[question.difficulty]}60`;
+            questionType.textContent = question.difficulty === 'easy' ? 'ЛЁГКИЙ' : 
+                                     question.difficulty === 'medium' ? 'СРЕДНИЙ' : 'СЛОЖНЫЙ';
+            questionType.style.borderColor = difficultyColors[question.difficulty];
             
             questionText.textContent = question.text;
             
+            // Очистить и добавить варианты
             optionsContainer.innerHTML = '';
             question.options.forEach((option, index) => {
                 const button = document.createElement('button');
@@ -1008,13 +1064,6 @@
             
             answerStatus.textContent = "Выберите вариант ответа";
             answerStatus.style.color = "#4facfe";
-            answerStatus.style.background = "rgba(79, 172, 254, 0.1)";
-            
-            document.querySelectorAll('.option-btn').forEach(btn => {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                btn.classList.remove('selected');
-            });
         }
 
         function selectAnswer(answerIndex, buttonElement) {
@@ -1022,14 +1071,12 @@
             
             selectedOption = answerIndex;
             
-            // Анимация выбора
+            // Выделить выбранный вариант
             document.querySelectorAll('.option-btn').forEach(btn => {
                 btn.classList.remove('selected');
-                btn.style.transform = 'translateY(0) scale(1)';
             });
             
             buttonElement.classList.add('selected');
-            buttonElement.style.transform = 'translateY(-5px) scale(1.03)';
             
             submitAnswer(answerIndex);
         }
@@ -1039,16 +1086,12 @@
             
             hasAnswered = true;
             
-            // Анимация блокировки
+            // Заблокировать кнопки
             document.querySelectorAll('.option-btn').forEach(btn => {
-                if (!btn.classList.contains('selected')) {
-                    btn.style.opacity = '0.5';
-                    btn.style.transform = 'scale(0.98)';
-                }
                 btn.disabled = true;
             });
             
-            // Проверка правильности
+            // Проверить правильность
             const isCorrect = (answerIndex === currentQuestion.correct);
             
             const answerData = {
@@ -1057,31 +1100,25 @@
                 timestamp: Date.now()
             };
             
-            db.ref(`games/${currentGameId}/answers/${currentQuestion.id}/${playerName}`).set(answerData).then(() => {
-                if (isCorrect) {
-                    answerStatus.innerHTML = '<i class="fas fa-check-circle"></i> Правильно! +' + (currentQuestion.points || 1) + ' очко';
-                    answerStatus.style.color = '#43e97b';
-                    answerStatus.style.background = 'rgba(67, 233, 123, 0.1)';
-                    answerStatus.style.borderColor = 'rgba(67, 233, 123, 0.3)';
-                    
-                    // Обновить счет
-                    db.ref(`games/${currentGameId}/players/${playerName}/score`).transaction(score => {
-                        return (score || 0) + (currentQuestion.points || 1);
-                    }).then(() => {
-                        showNotification(`+${currentQuestion.points || 1} очко!`, "success");
-                    });
-                } else {
-                    answerStatus.innerHTML = '<i class="fas fa-times-circle"></i> Неправильно!';
-                    answerStatus.style.color = '#ff416c';
-                    answerStatus.style.background = 'rgba(255, 65, 108, 0.1)';
-                    answerStatus.style.borderColor = 'rgba(255, 65, 108, 0.3)';
-                }
-            }).catch(error => {
-                answerStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ошибка отправки';
-                answerStatus.style.color = '#f093fb';
-                answerStatus.style.background = 'rgba(240, 147, 251, 0.1)';
-                answerStatus.style.borderColor = 'rgba(240, 147, 251, 0.3)';
-            });
+            db.ref(`games/${currentGameId}/answers/${currentQuestion.id}/${playerName}`).set(answerData)
+                .then(() => {
+                    if (isCorrect) {
+                        answerStatus.innerHTML = '<i class="fas fa-check-circle"></i> Правильно!';
+                        answerStatus.style.color = '#43e97b';
+                        
+                        // Обновить счет
+                        db.ref(`games/${currentGameId}/players/${playerName}/score`).transaction(score => {
+                            return (score || 0) + (currentQuestion.points || 1);
+                        });
+                    } else {
+                        answerStatus.innerHTML = '<i class="fas fa-times-circle"></i> Неправильно!';
+                        answerStatus.style.color = '#ff416c';
+                    }
+                })
+                .catch(error => {
+                    answerStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ошибка отправки';
+                    answerStatus.style.color = '#f093fb';
+                });
         }
 
         function handleShowingResults(game, questionId) {
@@ -1093,22 +1130,23 @@
             
             switchScreen('result');
             
-            db.ref(`games/${currentGameId}/answers/${currentQuestion.id}/${playerName}`).once('value').then(snapshot => {
-                const userAnswer = snapshot.val();
-                showResult(userAnswer, currentQuestion);
-            }).catch(() => {
-                showResult(null, currentQuestion);
-            });
+            db.ref(`games/${currentGameId}/answers/${currentQuestion.id}/${playerName}`).once('value')
+                .then(snapshot => {
+                    const userAnswer = snapshot.val();
+                    showResult(userAnswer, currentQuestion);
+                })
+                .catch(() => {
+                    showResult(null, currentQuestion);
+                });
         }
 
         function showResult(userAnswer, question) {
             let resultHTML = '';
-            
-            const correctAnswerText = question.options[question.correct] || `Вариант ${question.correct + 1}`;
+            const correctAnswerText = question.options[question.correct];
             
             if (userAnswer && userAnswer.answerIndex >= 0) {
                 const isCorrect = userAnswer.isCorrect;
-                const userAnswerText = question.options[userAnswer.answerIndex] || `Вариант ${userAnswer.answerIndex + 1}`;
+                const userAnswerText = question.options[userAnswer.answerIndex];
                 
                 resultHTML = `
                     <div style="color: ${isCorrect ? '#43e97b' : '#ff416c'}; font-size: 2rem; margin-bottom: 30px; font-weight: 900;">
@@ -1148,52 +1186,40 @@
         function handleGameFinished() {
             switchScreen('result');
             
-            db.ref(`games/${currentGameId}/players/${playerName}`).once('value').then(snapshot => {
-                const playerData = snapshot.val();
-                
-                resultContent.innerHTML = `
-                    <div style="text-align: center;">
-                        <div style="font-size: 2.5rem; color: #4facfe; margin-bottom: 30px; font-weight: 900;">
-                            <i class="fas fa-flag-checkered"></i> ВИКТОРИНА ЗАВЕРШЕНА
+            db.ref(`games/${currentGameId}/players/${playerName}`).once('value')
+                .then(snapshot => {
+                    const playerData = snapshot.val();
+                    
+                    resultContent.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 2.5rem; color: #4facfe; margin-bottom: 30px; font-weight: 900;">
+                                <i class="fas fa-flag-checkered"></i> ВИКТОРИНА ЗАВЕРШЕНА
+                            </div>
+                            <div style="background: rgba(255,255,255,0.08); padding: 35px; border-radius: 24px; margin: 30px 0; border: 2px solid rgba(79, 172, 254, 0.3);">
+                                <div style="color: #43e97b; font-size: 3.5rem; margin-bottom: 15px; font-weight: 900; text-shadow: 0 0 20px rgba(67, 233, 123, 0.3);">${playerData.score || 0} очков</div>
+                                <div style="color: rgba(255,255,255,0.8); font-size: 1.3rem;">Ваш финальный результат</div>
+                            </div>
+                            <button onclick="location.reload()" class="glass-btn btn-join" style="margin-top: 20px;">
+                                <i class="fas fa-redo"></i> НАЧАТЬ ЗАНОВО
+                            </button>
                         </div>
-                        <div style="background: rgba(255,255,255,0.08); padding: 35px; border-radius: 24px; margin: 30px 0; border: 2px solid rgba(79, 172, 254, 0.3);">
-                            <div style="color: #43e97b; font-size: 3.5rem; margin-bottom: 15px; font-weight: 900; text-shadow: 0 0 20px rgba(67, 233, 123, 0.3);">${playerData.score || 0} очков</div>
-                            <div style="color: rgba(255,255,255,0.8); font-size: 1.3rem;">Ваш финальный результат</div>
-                        </div>
-                        <button onclick="location.reload()" style="
-                            background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
-                            backdrop-filter: blur(10px);
-                            border: 2px solid rgba(79, 172, 254, 0.5);
-                            color: white;
-                            padding: 22px 45px;
-                            border-radius: 16px;
-                            font-size: 1.2rem;
-                            font-weight: 800;
-                            cursor: pointer;
-                            margin-top: 20px;
-                            transition: all 0.3s ease;
-                        ">
-                            <i class="fas fa-redo"></i> НАЧАТЬ ЗАНОВО
-                        </button>
-                    </div>
-                `;
-            });
+                    `;
+                });
         }
 
         function leaveGame() {
-            console.log("🚪 Выхожу из викторины...");
+            console.log("Выхожу из игры...");
             
             if (currentGameId && playerName && db) {
                 try {
                     db.ref(`games/${currentGameId}/players/${playerName}`).remove();
                 } catch (e) {
-                    console.log("Ошибка при выходе:", e);
+                    console.error("Ошибка при выходе:", e);
                 }
             }
             
             resetGameState();
             switchScreen('join');
-            showNotification("Вы вышли из викторины", "info");
         }
 
         function resetGameState() {
@@ -1235,13 +1261,6 @@
                 info: '#4facfe'
             };
             
-            const icon = {
-                success: '✅',
-                error: '❌',
-                warning: '⚠️',
-                info: 'ℹ️'
-            };
-            
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
@@ -1264,7 +1283,7 @@
                 border-left: 4px solid ${colors[type]};
             `;
             notification.innerHTML = `
-                <span style="font-size: 1.3rem;">${icon[type]}</span>
+                <span style="font-size: 1.3rem;">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
                 <span>${message}</span>
             `;
             document.body.appendChild(notification);
@@ -1279,7 +1298,7 @@
             }, 3000);
         }
 
-        // Стили для анимаций уведомлений и пульсации
+        // Добавить стили для анимаций
         const notificationStyle = document.createElement('style');
         notificationStyle.textContent = `
             @keyframes slideIn {
@@ -1303,74 +1322,72 @@
                     opacity: 0;
                 }
             }
-            
-            @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.2); }
-                100% { transform: scale(1); }
-            }
         `;
         document.head.appendChild(notificationStyle);
 
-        // Инициализация при загрузке
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("✅ Student app loaded (Glassmorphism)");
+            console.log("=== ПРИЛОЖЕНИЕ ЗАГРУЖЕНО ===");
             
-            // Инициализируем Firebase
-            initFirebase();
+            // Показать панель отладки при нажатии Ctrl+Shift+D
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                    debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+                }
+            });
             
-            // Автофокус
-            playerNameInput.focus();
+            // Проверить Firebase
+            setTimeout(() => {
+                db = checkFirebase();
+                if (db) {
+                    showDebug("Приложение готово");
+                } else {
+                    showDebug("Firebase не загружен");
+                }
+            }, 1000);
             
-            // Enter для удобства
+            // Назначить обработчик кнопке
+            joinButton.addEventListener('click', joinGame);
+            
+            // Обработчики Enter
             playerNameInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') gameCodeInput.focus();
+                if (e.key === 'Enter') {
+                    gameCodeInput.focus();
+                }
             });
             
             gameCodeInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') joinGame();
+                if (e.key === 'Enter') {
+                    joinGame();
+                }
             });
             
-            // Валидация в реальном времени
+            // Валидация ввода
+            gameCodeInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '');
+                if (this.value.length > 8) {
+                    this.value = this.value.substring(0, 8);
+                }
+            });
+            
             playerNameInput.addEventListener('input', function() {
                 if (this.value.length > 15) {
                     this.value = this.value.substring(0, 15);
                 }
             });
             
-            gameCodeInput.addEventListener('input', function() {
-                this.value = this.value.replace(/\D/g, ''); // Только цифры
-                if (this.value.length > 8) {
-                    this.value = this.value.substring(0, 8);
-                }
-            });
+            // Автофокус
+            playerNameInput.focus();
             
-            // Анимация появления полей
-            setTimeout(() => {
-                playerNameInput.style.opacity = '1';
-                playerNameInput.style.transform = 'translateY(0)';
-                
-                setTimeout(() => {
-                    gameCodeInput.style.opacity = '1';
-                    gameCodeInput.style.transform = 'translateY(0)';
-                }, 200);
-            }, 300);
-            
-            // Изначальные стили для анимации
-            playerNameInput.style.opacity = '0';
-            playerNameInput.style.transform = 'translateY(10px)';
-            playerNameInput.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            
-            gameCodeInput.style.opacity = '0';
-            gameCodeInput.style.transform = 'translateY(10px)';
-            gameCodeInput.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            
-            // Добавляем обработчик для кнопки присоединиться
-            const joinButton = document.querySelector('.btn-join');
-            joinButton.addEventListener('click', joinGame);
-            
-            console.log("🚀 Приложение готово к подключению");
+            showDebug("Инициализация завершена");
         });
+
+        // Экспортируем функции для глобального доступа
+        window.joinGame = joinGame;
+        window.leaveGame = leaveGame;
     </script>
 </body>
 </html>
