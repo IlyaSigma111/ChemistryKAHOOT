@@ -15,7 +15,7 @@ const firebaseConfig = {
 // Инициализация Firebase
 try {
     if (!firebase.apps.length) {
-        firebase.initializeApp(fbaseConfig);
+        firebase.initializeApp(firebaseConfig); // ← ИСПРАВЛЕНО: было fbaseConfig
     }
     window.db = firebase.database();
     console.log("✅ Firebase инициализирован");
